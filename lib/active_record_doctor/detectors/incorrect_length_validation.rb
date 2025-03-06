@@ -39,6 +39,9 @@ module ActiveRecordDoctor
             next if model_maximum == database_maximum
             next if column.limit && covered_by_inclusion_validation?(model, column.name, database_maximum)
 
+            # Add violation only to the root model of STI.
+            next if model_maximum.nil? && sti_subclass?(model)
+
             problem!(
               model: model.name,
               attribute: column.name,
@@ -92,6 +95,11 @@ module ActiveRecordDoctor
         end
 
         nil
+      end
+
+      def sti_subclass?(model)
+        model.columns_hash.include?(model.inheritance_column.to_s) &&
+          model.base_class != model
       end
     end
   end
