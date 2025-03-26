@@ -33,15 +33,16 @@ module ActiveRecordDoctor
       def detect
         each_model(except: config(:ignore_models), existing_tables_only: true) do |model|
           each_attribute(model, except: config(:ignore_attributes), type: [:string, :text]) do |column|
+            table = model.table_name
             model_maximum = maximum_allowed_by_length_validation(model, column.name.to_sym)
-            database_maximum = column.limit
+            database_maximum = column_limit(table, column)
             next if model_maximum == database_maximum
             next if column.limit && covered_by_inclusion_validation?(model, column.name.to_sym, database_maximum)
 
             problem!(
               model: model.name,
               attribute: column.name,
-              table: model.table_name,
+              table: table,
               database_maximum: database_maximum,
               model_maximum: model_maximum
             )
@@ -73,6 +74,20 @@ module ActiveRecordDoctor
         else
           false
         end
+      end
+
+      def column_limit(table, column)
+        return column.limit if column.limit
+
+        # Example: char_length(name::text) <= 64
+        pattern = /(char_|character_)?length\(['"`]?#{column.name}(::text)?['"`]?\)\s*<=\s*(?<limit>\d+)/i
+
+        check_constraints(table).each do |definition|
+          match = definition.match(pattern)
+          return match[:limit].to_i if match
+        end
+
+        nil
       end
     end
   end
