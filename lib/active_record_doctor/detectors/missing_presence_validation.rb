@@ -58,9 +58,8 @@ module ActiveRecordDoctor
           validator_items = inclusion_validator_items(validator)
           return true if validator_items.is_a?(Proc)
 
-          attributes = validator.attributes.map(&:to_s)
           validator.is_a?(ActiveModel::Validations::InclusionValidator) &&
-            attributes.include?(column.name) &&
+            validator.attributes.map(&:to_s).include?(column.name) &&
             !validator_items.include?(nil)
         end
       end
@@ -70,9 +69,8 @@ module ActiveRecordDoctor
           validator_items = inclusion_validator_items(validator)
           return true if validator_items.is_a?(Proc)
 
-          attributes = validator.attributes.map(&:to_s)
           validator.is_a?(ActiveModel::Validations::ExclusionValidator) &&
-            attributes.include?(column.name) &&
+            validator.attributes.map(&:to_s).include?(column.name) &&
             validator_items.include?(nil)
         end
       end
@@ -87,10 +85,8 @@ module ActiveRecordDoctor
         allowed_attributes << belongs_to.name.to_s if belongs_to
 
         model.validators.any? do |validator|
-          attributes = validator.attributes.map(&:to_s)
-
           validator.is_a?(ActiveRecord::Validations::PresenceValidator) &&
-            (attributes & allowed_attributes).present?
+            (validator.attributes.map(&:to_s) & allowed_attributes).present?
         end
       end
 
