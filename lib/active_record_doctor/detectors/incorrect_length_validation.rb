@@ -40,7 +40,7 @@ module ActiveRecordDoctor
             next if column.limit && covered_by_inclusion_validation?(model, column.name, database_maximum)
 
             # Add violation only to the root model of STI.
-            next if model_maximum.nil? && sti_subclass?(model)
+            next if (model_maximum.nil? || database_maximum.nil?) && sti_subclass?(model)
 
             problem!(
               model: model.name,
